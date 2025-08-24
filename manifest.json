@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "LeetCode Focus Tool",
+  "version": "1.2",
+  "description": "Lock Editorial and Solutions tabs on LeetCode to improve focus.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs",
+    "notifications"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/problems/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
