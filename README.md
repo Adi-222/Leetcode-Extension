@@ -1,14 +1,7 @@
-Of course! A great GitHub `README.md` is essential. It's the front page of your project.
 
-Here is a comprehensive, well-structured description you can use. I've written it in Markdown format, so you can copy and paste it directly into a `README.md` file in your project folder.
-
-I've also included placeholders for screenshots, which are highly recommended to showcase your extension.
-
----
 
 # LeetCode Focus - A Chrome Extension for Distraction-Free Problem Solving
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 An essential tool for anyone looking to build true problem-solving discipline on LeetCode. This extension helps you resist the temptation to peek at the solutions or editorial too early, creating a focused environment where you can truly grapple with challenges.
 
