@@ -1,5 +1,5 @@
 /**
- * LeetCode Focus Tool - Content Script (Definitive Version with Toast)
+ * LeetCode Focus Tool - Content Script (Definitive Version with Toast & Testcase Block)
  */
 
 // --- CONFIGURATION ---
@@ -9,23 +9,16 @@ const TARGET_SELECTORS = {
   beakerButton: 'div[data-e2e-locator="solution-button"]'
 };
 
-
 // --- NEW: Function to create and show a toast message ---
-/**
- * Injects a temporary, styled message onto the page.
- * @param {string} message The text to display in the toast.
- */
 function showToast(message) {
-  // Create the toast element
   const toast = document.createElement('div');
   toast.textContent = message;
 
-  // Style the toast
   toast.style.position = 'fixed';
   toast.style.bottom = '30px';
   toast.style.left = '50%';
   toast.style.transform = 'translateX(-50%)';
-  toast.style.backgroundColor = '#2c3e50'; // Dark, modern background
+  toast.style.backgroundColor = '#2c3e50';
   toast.style.color = 'white';
   toast.style.padding = '12px 25px';
   toast.style.borderRadius = '8px';
@@ -36,24 +29,19 @@ function showToast(message) {
   toast.style.opacity = '0';
   toast.style.transition = 'opacity 0.5s ease';
 
-  // Add it to the page
   document.body.appendChild(toast);
 
-  // Fade it in, then set a timer to fade it out and remove it
   setTimeout(() => {
     toast.style.opacity = '1';
-  }, 100); // Short delay to allow CSS transition to work
+  }, 100);
 
   setTimeout(() => {
     toast.style.opacity = '0';
-    // Remove the element from the DOM after the fade-out transition completes
     toast.addEventListener('transitionend', () => toast.remove());
-  }, 3000); // Keep the toast on screen for 3 seconds
+  }, 3000);
 }
 
-
 // --- CORE LOGIC (Disabling/Enabling buttons) ---
-
 function disableElement(element) {
   if (!element) return;
   const parentButton = element.closest('.flexlayout__tab_button, div[data-e2e-locator="solution-button"]');
@@ -81,6 +69,7 @@ function findAndDisableAll() {
   Object.values(TARGET_SELECTORS).forEach(selector => {
     waitForElement(selector, disableElement);
   });
+  hideTestcaseSection();
 }
 
 function findAndEnableAll() {
@@ -89,6 +78,7 @@ function findAndEnableAll() {
     const element = document.querySelector(selector);
     if (element) enableElement(element);
   });
+  unhideTestcaseSection();
 }
 
 function waitForElement(selector, callback) {
@@ -106,21 +96,62 @@ function waitForElement(selector, callback) {
   }, 500);
 }
 
+// --- HIDE / UNHIDE TESTCASE SECTION ---
+function hideTestcaseSection() {
+  const testcaseTabbar = document.querySelector('#testcase_tabbar_outer');
+  if (!testcaseTabbar) return;
+
+  const tabset = testcaseTabbar.closest('.flexlayout__tabset');
+  if (!tabset || tabset.dataset.hidden) return;
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.style.position = 'absolute';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'white';
+  overlay.style.zIndex = '9999';
+  overlay.style.pointerEvents = 'none';
+  overlay.classList.add('testcase-overlay');
+
+  tabset.style.position = 'relative'; // ensure overlay covers correctly
+  tabset.appendChild(overlay);
+  tabset.dataset.hidden = 'true';
+}
+
+function unhideTestcaseSection() {
+  const overlay = document.querySelector('.testcase-overlay');
+  if (overlay) {
+    overlay.remove();
+    const tabset = overlay.closest('.flexlayout__tabset');
+    if (tabset) delete tabset.dataset.hidden;
+  }
+}
+
+
+function unhideTestcaseSection() {
+  const testcaseSection = document.querySelector('#3aa681c2-9c1d-bb86-1de9-f2e03dcbc7b6');
+  if (testcaseSection && testcaseSection.dataset.hidden) {
+    const overlay = testcaseSection.querySelector('.testcase-overlay');
+    if (overlay) overlay.remove();
+    delete testcaseSection.dataset.hidden;
+  }
+}
 
 // --- BROWSER EVENT LISTENERS ---
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "lock") {
     findAndDisableAll();
   } else if (request.action === "unlock") {
     findAndEnableAll();
   } else if (request.action === "showToast") {
-    // --- NEW: Listen for the toast message request ---
     showToast(request.message);
   }
 });
 
-// Check if the lock should be active when the page first loads.
+// --- INIT ON PAGE LOAD ---
 chrome.storage.local.get('lockUntil', (data) => {
   if (data.lockUntil && Date.now() < data.lockUntil) {
     window.addEventListener('load', findAndDisableAll);

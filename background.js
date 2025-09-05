@@ -1,9 +1,11 @@
-// --- PASTE YOUR GEMINI API KEY HERE ---
-importScripts('config.js'); // This loads the config.js file
-const API_KEY = GEMINI_API_KEY; // Use the key from the config file
+// --- Load API Key from config.js ---
+importScripts('config.js'); // Make sure config.js has: const GEMINI_API_KEY = "your-real-key";
+const API_KEY = GEMINI_API_KEY;
 
-// The rest of the file stays the same
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+// --- Gemini API URL ---
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${API_KEY}`;
+
+console.log("Loaded API key:", API_KEY);
 
 // Listener for when an alarm fires (timer ends naturally)
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -27,7 +29,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // Send lock message and toast message to content script
     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-      if(tabs[0]) {
+      if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, { action: "lock" });
         chrome.tabs.sendMessage(tabs[0].id, { 
           action: "showToast", 
@@ -35,16 +37,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       }
     });
+
   } else if (request.action === "stopTimer") {
     unlockAndClear(true);
+
   } else if (request.action === "getAiHint") {
-    // --- NEW: Handle AI Hint Request ---
+    // --- Handle AI Hint Request ---
     getAiHint(request.userInput)
       .then(hint => sendResponse({ hint: hint }))
       .catch(error => sendResponse({ error: error.message }));
-    return true; // Indicates that the response will be sent asynchronously
+    return true; // async response
   }
 });
+
 
 /**
  * Helper function to unlock tabs and clear timer data.
@@ -70,55 +75,45 @@ function unlockAndClear(showNotification) {
   }
 }
 
+
 /**
- * --- NEW: Function to call Gemini API ---
- * @param {string} userInput - The user's code or approach.
+ * --- Function to call Gemini API ---
+ * @param {string} prompt - The user's code or approach.
  * @returns {Promise<string>} The AI-generated hint.
  */
-async function getAiHint(userInput) {
-  // This is the "system prompt" that instructs the AI on how to behave.
-  const systemPrompt = `You are a world-class programming coach for someone practicing on LeetCode. Your goal is to guide the user to the solution, not to give it away. Analyze the user's code or approach.
-  DO:
-  - Identify logical flaws or bugs.
-  - Ask Socratic questions to guide their thinking. (e.g., "What happens in your code if the input array is empty?")
-  - Suggest a high-level approach or a different data structure to consider.
-  - Point out inefficiencies (e.g., "This is an O(n^2) approach. Can you think of a way to do it in O(n)?").
-  - Provide feedback on coding style and readability.
-  
-  DO NOT:
-  - Provide the complete, corrected code solution.
-  - Write more than a few lines of example code.
-  - Give away the core trick of the problem.
-
-  Only if the user's input explicitly includes the phrase "give final solution", you may then provide the complete, corrected code.
-  
-  Here is the user's input:`;
-
+async function getAiHint(prompt) {
   try {
+    console.log("Calling Gemini API at:", API_URL);
+
     const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `${systemPrompt}\n\n${userInput}`
-          }]
-        }]
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ]
       })
     });
 
+    console.log("Response status:", response.status);
+    console.log("API Key being used:", API_KEY);
+console.log("API URL:", API_URL);
+
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error body:", errorText);
       throw new Error(`API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
-    // Extract the text from the Gemini response
-    const hint = data.candidates[0].content.parts[0].text;
-    return hint.trim();
+    console.log("Gemini API raw response:", data);
+
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response text.";
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    return "Sorry, there was an error contacting the AI coach. Please check your API key and network connection.";
+    return "Sorry, there was an error contacting the AI coach.";
   }
 }

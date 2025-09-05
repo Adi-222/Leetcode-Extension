@@ -9,6 +9,9 @@
     "tabs",
     "notifications"
   ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ],
   "action": {
     "default_popup": "popup.html"
   },
