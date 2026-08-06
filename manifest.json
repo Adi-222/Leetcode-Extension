@@ -7,10 +7,12 @@
     "storage",
     "alarms",
     "tabs",
-    "notifications"
+    "notifications",
+    "declarativeNetRequest"
   ],
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "*://leetcode.com/*"
   ],
   "action": {
     "default_popup": "popup.html"

@@ -131,14 +131,6 @@ function unhideTestcaseSection() {
 }
 
 
-function unhideTestcaseSection() {
-  const testcaseSection = document.querySelector('#3aa681c2-9c1d-bb86-1de9-f2e03dcbc7b6');
-  if (testcaseSection && testcaseSection.dataset.hidden) {
-    const overlay = testcaseSection.querySelector('.testcase-overlay');
-    if (overlay) overlay.remove();
-    delete testcaseSection.dataset.hidden;
-  }
-}
 
 // --- BROWSER EVENT LISTENERS ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

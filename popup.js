@@ -14,14 +14,21 @@ const durationInput = document.getElementById('duration');
 const userInput = document.getElementById('userInput');
 const aiResponse = document.getElementById('aiResponse');
 
+const suggestView = document.getElementById('suggest-view');
+const usernameInput = document.getElementById('usernameInput');
+const getSuggestionsBtn = document.getElementById('getSuggestionsBtn');
+const suggestResponse = document.getElementById('suggestResponse');
+const suggestBackBtn = document.getElementById('suggestBackBtn');
+
 let countdownInterval;
-const TWENTY_MINUTES_MS = 1 * 60 * 1000;
+const TWENTY_MINUTES_MS = 20 * 60 * 1000;
 
 // --- View Switching Logic ---
 function showView(view) {
   startView.style.display = 'none';
   timerView.style.display = 'none';
   aiView.style.display = 'none';
+  suggestView.style.display = 'none';
   view.style.display = 'flex';
 }
 
@@ -106,9 +113,41 @@ getHintBtn.addEventListener('click', () => {
   });
 });
 
+getSuggestionsBtn.addEventListener('click', () => {
+  const username = usernameInput.value.trim();
+  if (!username) {
+    alert("Please enter a LeetCode username.");
+    return;
+  }
+  
+  // Save username
+  chrome.storage.local.set({ leetcodeUsername: username });
+  
+  showView(suggestView);
+  suggestResponse.textContent = "Analyzing your profile... (this may take a few seconds)";
+  getSuggestionsBtn.disabled = true;
+
+  chrome.runtime.sendMessage({ action: "getSuggestions", username: username }, (response) => {
+    if (response.error) {
+      suggestResponse.textContent = "Error: " + response.error;
+    } else {
+      suggestResponse.textContent = response.suggestions;
+    }
+    getSuggestionsBtn.disabled = false;
+  });
+});
+
+suggestBackBtn.addEventListener('click', () => {
+  showView(startView);
+});
+
 // --- Main logic on popup open ---
 document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get(['lockUntil', 'startTime'], (data) => {
+  chrome.storage.local.get(['lockUntil', 'startTime', 'leetcodeUsername'], (data) => {
+    if (data.leetcodeUsername) {
+      usernameInput.value = data.leetcodeUsername;
+    }
+
     if (data.lockUntil && Date.now() < data.lockUntil) {
       updateTimerView(data.lockUntil, data.startTime);
     } else {
